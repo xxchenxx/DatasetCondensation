@@ -126,7 +126,7 @@ def main():
 
                     accs = []
                     for it_eval in range(args.num_eval):
-                        net_eval = get_network(model_eval, channel, num_classes, im_size).to(args.device) # get a random model
+                        net_eval = get_network(model_eval, channel, num_classes, im_size, weights=weights).to(args.device) # get a random model
                         image_syn_eval, label_syn_eval = copy.deepcopy(image_syn.detach()), copy.deepcopy(label_syn.detach()) # avoid any unaware modification
                         _, acc_train, acc_test = evaluate_synset(it_eval, net_eval, image_syn_eval, label_syn_eval, testloader, args)
                         accs.append(acc_test)

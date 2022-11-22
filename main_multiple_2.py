@@ -232,9 +232,11 @@ def main():
             if it == args.Iteration: # only record the final results
                 data_save.append([copy.deepcopy(image_syn.detach().cpu()), copy.deepcopy(label_syn.detach().cpu())])
                 torch.save({'data': data_save, 'accs_all_exps': accs_all_exps, }, os.path.join(args.save_path, 'res_%s_%s_%s_%dipc.pt'%(args.method, args.dataset, args.model, args.ipc)))
-        net_eval = get_network(model_eval, channel, num_classes, im_size).to(args.device) # get a random model
+        net_eval = get_network(model_eval, channel, num_classes, im_size, weights=weights).to(args.device) # get a random model
         image_syn_eval, label_syn_eval = copy.deepcopy(image_syn.detach()), copy.deepcopy(label_syn.detach()) # avoid any unaware modification
         net, acc_train, acc_test = evaluate_synset(it_eval, net_eval, image_syn_eval, label_syn_eval, testloader, args)
+        print(acc_test)
+        print(acc_train)
         weights = copy.deepcopy(net.state_dict())
 
     print('\n==================== Final Results ====================\n')
