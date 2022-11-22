@@ -121,7 +121,7 @@ def get_default_convnet_setting():
 
 
 
-def get_network(model, channel, num_classes, im_size=(32, 32)):
+def get_network(model, channel, num_classes, im_size=(32, 32), weights=None):
     torch.random.manual_seed(int(time.time() * 1000) % 100000)
     net_width, net_depth, net_act, net_norm, net_pooling = get_default_convnet_setting()
 
@@ -205,7 +205,8 @@ def get_network(model, channel, num_classes, im_size=(32, 32)):
     else:
         device = 'cpu'
     net = net.to(device)
-
+    if weights:
+        net.load_state_dict(weights)
     return net
 
 
