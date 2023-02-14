@@ -45,6 +45,7 @@ def main():
         os.mkdir(args.save_path)
 
     eval_it_pool = np.arange(0, args.Iteration+1, 500).tolist() if args.eval_mode == 'S' or args.eval_mode == 'SS' else [args.Iteration] # The list of iterations when we evaluate models and record results.
+    eval_it_pool = [args.Iteration]
     print('eval_it_pool: ', eval_it_pool)
     channel, im_size, num_classes, class_names, mean, std, dst_train, dst_test, testloader = get_dataset(args.dataset, args.data_path)
     model_eval_pool = get_eval_pool(args.eval_mode, args.model, args.model)
@@ -103,7 +104,12 @@ def main():
         criterion = nn.CrossEntropyLoss().to(args.device)
         print('%s training begins'%get_time())
         
-        weights = None
+
+        if args.weights is None:
+            net = get_network(args.model, channel, num_classes, im_size).to(args.device) # get a random model
+            weights = copy.deepcopy(net.state_dict())
+        else:
+            weights = torch.load(args.weights)
         for it in range(args.Iteration+1):
 
             ''' Evaluate synthetic data '''
@@ -146,12 +152,7 @@ def main():
 
 
             ''' Train synthetic data '''
-            if weights is None:
-                if args.weights is None:
-                    net = get_network(args.model, channel, num_classes, im_size).to(args.device) # get a random model
-                    weights = copy.deepcopy(net.state_dict())
-                else:
-                    weights = torch.load(args.weights)
+
             net = get_network(args.model, channel, num_classes, im_size, weights=weights).to(args.device) # get a random model
             
             net.train()

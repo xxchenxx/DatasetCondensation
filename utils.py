@@ -121,7 +121,7 @@ def get_default_convnet_setting():
 
 
 
-def get_network(model, channel, num_classes, im_size=(32, 32), weights=None):
+def get_network(model, channel, num_classes, im_size=(32, 32), weights=None, pretrained=False):
     torch.random.manual_seed(int(time.time() * 1000) % 100000)
     net_width, net_depth, net_act, net_norm, net_pooling = get_default_convnet_setting()
 
@@ -144,7 +144,7 @@ def get_network(model, channel, num_classes, im_size=(32, 32), weights=None):
     elif model == 'ResNet18BN_AP':
         net = ResNet18BN_AP(channel=channel, num_classes=num_classes)
     elif model == 'ResNet18BN':
-        net = ResNet18BN(channel=channel, num_classes=num_classes)
+        net = ResNet18BN(channel=channel, num_classes=num_classes, pretrained=pretrained)
 
     elif model == 'ConvNetD1':
         net = ConvNet(channel=channel, num_classes=num_classes, net_width=net_width, net_depth=1, net_act=net_act, net_norm=net_norm, net_pooling=net_pooling, im_size=im_size)
@@ -278,6 +278,8 @@ def get_loops(ipc):
     # The following values are empirically good.
     if ipc == 1:
         outer_loop, inner_loop = 1, 1
+    elif ipc == 5:
+        outer_loop, inner_loop = 5, 100
     elif ipc == 10:
         outer_loop, inner_loop = 10, 50
     elif ipc == 20:
@@ -341,7 +343,9 @@ def evaluate_synset(it_eval, net, images_train, labels_train, testloader, args):
     labels_train = labels_train.to(args.device)
     lr = float(args.lr_net)
     Epoch = int(args.epoch_eval_train)
+    # Epoch = 180
     lr_schedule = [Epoch//2+1]
+    # lr_schedule = [60, 120]
     optimizer = torch.optim.SGD(net.parameters(), lr=lr, momentum=0.9, weight_decay=0.0005)
     criterion = nn.CrossEntropyLoss().to(args.device)
 
