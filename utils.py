@@ -284,6 +284,8 @@ def get_loops(ipc):
         outer_loop, inner_loop = 10, 50
     elif ipc == 20:
         outer_loop, inner_loop = 20, 25
+    elif ipc == 25:
+        outer_loop, inner_loop = 25, 20
     elif ipc == 30:
         outer_loop, inner_loop = 30, 20
     elif ipc == 40:
@@ -368,11 +370,14 @@ def evaluate_synset(it_eval, net, images_train, labels_train, testloader, args):
 
 def evaluate_synset_with_previous(it_eval, net, images_train, labels_train, previous_images_train, previous_labels_train, testloader, args):
     net = net.to(args.device)
-
+    count = 0
     for previous_images, previous_labels in zip(previous_images_train, previous_labels_train):
         previous_images = previous_images.to(args.device)
         previous_labels = previous_labels.to(args.device)
         lr = float(args.lr_net)
+        count += 1
+        if count > 0:
+            lr = float(args.lr_net) / 2
         Epoch = int(args.epoch_eval_train)
         # Epoch = 180
         lr_schedule = [Epoch//2+1]
@@ -382,10 +387,11 @@ def evaluate_synset_with_previous(it_eval, net, images_train, labels_train, prev
 
         dst_train = TensorDataset(previous_images, previous_labels)
         trainloader = torch.utils.data.DataLoader(dst_train, batch_size=args.batch_train, shuffle=True, num_workers=0)
-
+        
         start = time.time()
         for ep in range(Epoch+1):
             loss_train, acc_train = epoch('train', trainloader, net, optimizer, criterion, args, aug = True)
+
             if ep in lr_schedule:
                 lr *= 0.1
                 optimizer = torch.optim.SGD(net.parameters(), lr=lr, momentum=0.9, weight_decay=0.0005)
@@ -396,7 +402,13 @@ def evaluate_synset_with_previous(it_eval, net, images_train, labels_train, prev
 
     images_train = images_train.to(args.device)
     labels_train = labels_train.to(args.device)
-    lr = float(args.lr_net)
+    print(images_train.shape)
+    print(labels_train.shape)
+    
+    if count > 0:
+        lr = float(args.lr_net) / 2
+    else:
+        lr = float(args.lr_net)
     Epoch = int(args.epoch_eval_train)
     # Epoch = 180
     lr_schedule = [Epoch//2+1]
@@ -406,10 +418,16 @@ def evaluate_synset_with_previous(it_eval, net, images_train, labels_train, prev
 
     dst_train = TensorDataset(images_train, labels_train)
     trainloader = torch.utils.data.DataLoader(dst_train, batch_size=args.batch_train, shuffle=True, num_workers=0)
+    start = 0
+    time_train = time.time() - start
+    loss_test, acc_test = epoch('test', testloader, net, optimizer, criterion, args, aug = False)
+    time_train, loss_train, acc_train = 0, 0, 0
+    print('%s Evaluate_%02d: epoch = %04d train time = %d s train loss = %.6f train acc = %.4f, test acc = %.4f' % (get_time(), it_eval, Epoch, int(time_train), loss_train, acc_train, acc_test))
 
     start = time.time()
     for ep in range(Epoch+1):
         loss_train, acc_train = epoch('train', trainloader, net, optimizer, criterion, args, aug = True)
+
         if ep in lr_schedule:
             lr *= 0.1
             optimizer = torch.optim.SGD(net.parameters(), lr=lr, momentum=0.9, weight_decay=0.0005)
@@ -428,11 +446,11 @@ def train_synset_with_previous(net, previous_images_train, previous_labels_train
         previous_images = previous_images.to(args.device)
         previous_labels = previous_labels.to(args.device)
         lr = float(args.lr_net)
-        Epoch = int(args.epoch_eval_train) // 2
+        Epoch = int(args.epoch_retrain)
         # Epoch = 180
         lr_schedule = [Epoch//2+1]
         # lr_schedule = [60, 120]
-        optimizer = torch.optim.SGD(net.parameters(), lr=lr, momentum=0.9, weight_decay=0.0005)
+        optimizer = torch.optim.SGD(net.parameters(), lr=lr)
         criterion = nn.CrossEntropyLoss().to(args.device)
 
         dst_train = TensorDataset(previous_images, previous_labels)
@@ -443,7 +461,7 @@ def train_synset_with_previous(net, previous_images_train, previous_labels_train
             loss_train, acc_train = epoch('train', trainloader, net, optimizer, criterion, args, aug = True)
             if ep in lr_schedule:
                 lr *= 0.1
-                optimizer = torch.optim.SGD(net.parameters(), lr=lr, momentum=0.9, weight_decay=0.0005)
+                optimizer = torch.optim.SGD(net.parameters(), lr=lr)
 
         time_train = time.time() - start
 
